@@ -1,23 +1,36 @@
-const puppeteer = require("puppeteer");
 const path = require("path");
 const fs = require("fs");
 
 const REPORTS_DIR = path.join(__dirname, "../../generated-reports");
 
-// Ensure the reports directory exists before trying to write into it
 if (!fs.existsSync(REPORTS_DIR)) {
   fs.mkdirSync(REPORTS_DIR, { recursive: true });
 }
 
 const generatePDF = async (html, company) => {
-  // Sanitise company name so it's safe to use in a filename
   const safeName = company.replace(/[^a-zA-Z0-9-_]/g, "_");
   const filePath = path.join(REPORTS_DIR, `${safeName}-${Date.now()}.pdf`);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  let browser;
+
+  // On Render (or any non-local env), use the bundled Chromium binary
+  // that doesn't need to be downloaded at all. Locally, use regular puppeteer.
+  if (process.env.NODE_ENV === "production" || process.env.RENDER) {
+    const chromium = require("@sparticuz/chromium");
+    const puppeteer = require("puppeteer-core");
+
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+  } else {
+    const puppeteer = require("puppeteer");
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+  }
 
   try {
     const page = await browser.newPage();
@@ -36,10 +49,6 @@ const generatePDF = async (html, company) => {
   }
 };
 
-/**
- * Deletes a generated PDF from disk.
- * Call this after the email has been sent so files don't accumulate.
- */
 const cleanupPDF = (filePath) => {
   fs.unlink(filePath, (err) => {
     if (err) console.error("PDF cleanup error:", err.message);
