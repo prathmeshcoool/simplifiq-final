@@ -2,18 +2,18 @@ const nodemailer = require("nodemailer");
 const { cleanupPDF } = require("./pdfService");
 
 const sendEmail = async (to, company, pdfPath) => {
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_USER,   // your Brevo login email
-    pass: process.env.BREVO_PASS,   // SMTP key from Brevo dashboard
-  },
-});
+  const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.BREVO_USER,
+      pass: process.env.BREVO_PASS,
+    },
+  });
 
   const info = await transporter.sendMail({
-    from: process.env.EMAIL_USER,
+    from: process.env.BREVO_USER,
     to,
     subject: `${company} — AI Business Audit Report`,
     html: `
@@ -38,8 +38,6 @@ const transporter = nodemailer.createTransport({
   });
 
   console.log("Email sent to", to, "| messageId:", info.messageId);
-
-  // Delete the PDF from disk now that it's been sent
   cleanupPDF(pdfPath);
 };
 
