@@ -1,0 +1,39 @@
+SimplifiQ AI Lead Automation System — Reflection
+
+This project was built as an end-to-end AI-powered lead automation workflow.
+
+The system captures lead information through a frontend form, enriches company data through scraping and AI analysis, generates a personalized PDF audit report, emails the report automatically, and logs lead activity into Google Sheets.
+
+Key engineering decisions:
+- React + TailwindCSS for a fast and clean frontend UI
+- Express.js backend for API orchestration
+- Groq API for AI-generated business analysis
+- Puppeteer for dynamic PDF generation
+- Nodemailer for automated email delivery
+- Google Sheets API for lead tracking
+
+Challenges faced:
+- Handling malformed AI JSON responses
+- Managing asynchronous workflow between scraping, AI analysis, PDF generation, and email delivery
+- Configuring email authentication securely
+- Improving PDF readability and formatting
+- Handling API failures and fallback cases
+
+Tradeoffs:
+- Focused primarily on workflow reliability and maintainability over advanced UI complexity
+- Google Drive PDF archiving bonus feature was not implemented due to time constraints and OAuth complexity
+- AI-generated outputs may vary slightly depending on model responses
+
+What I learned:
+- Building complete backend workflows
+- Integrating multiple external services together
+- Error handling in real-world async systems
+- Structuring maintainable full-stack applications
+- Using AI tools effectively during software development
+
+Future improvements:
+- Better PDF branding and visual analytics
+- Persistent database storage
+- Authentication and admin dashboard
+- Advanced company enrichment APIs
+- Deployment and cloud hosting
