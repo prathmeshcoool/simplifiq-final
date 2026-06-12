@@ -2,19 +2,15 @@ const nodemailer = require("nodemailer");
 const { cleanupPDF } = require("./pdfService");
 
 const sendEmail = async (to, company, pdfPath) => {
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,       // STARTTLS, not SSL
-    requireTLS: true,    // force TLS upgrade
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-  });
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.BREVO_USER,   // your Brevo login email
+    pass: process.env.BREVO_PASS,   // SMTP key from Brevo dashboard
+  },
+});
 
   const info = await transporter.sendMail({
     from: process.env.EMAIL_USER,
