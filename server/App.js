@@ -12,6 +12,11 @@ const addLeadToSheet = require("./services/sheetsService");
 
 const app = express();
 
+// Render (and most cloud platforms) sit behind a reverse proxy that sets
+// X-Forwarded-For. This tells Express to trust that header so
+// express-rate-limit can correctly identify clients by IP.
+app.set("trust proxy", 1);
+
 app.use(cors());
 app.use(express.json());
 
