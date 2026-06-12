@@ -1,22 +1,22 @@
-const nodemailer = require("nodemailer");
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 const { cleanupPDF } = require("./pdfService");
 
 const sendEmail = async (to, company, pdfPath) => {
-  const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.BREVO_USER,
-      pass: process.env.BREVO_PASS,
-    },
-  });
+  // Read the PDF and convert to base64
+  const pdfBuffer = fs.readFileSync(pdfPath);
+  const pdfBase64 = pdfBuffer.toString("base64");
+  const filename = `${company}-Audit.pdf`;
 
-  const info = await transporter.sendMail({
-    from: process.env.BREVO_USER,
-    to,
+  const payload = {
+    sender: {
+      name: "SimplifiQ AI",
+      email: process.env.BREVO_USER,
+    },
+    to: [{ email: to }],
     subject: `${company} — AI Business Audit Report`,
-    html: `
+    htmlContent: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 32px; background: #f9fafb; border-radius: 12px;">
         <h2 style="color: #1d4ed8; margin-bottom: 12px;">Your AI Audit Report is Ready</h2>
         <p style="color: #374151; line-height: 1.7;">
@@ -29,15 +29,26 @@ const sendEmail = async (to, company, pdfPath) => {
         </p>
       </div>
     `,
-    attachments: [
+    attachment: [
       {
-        filename: `${company}-Audit.pdf`,
-        path: pdfPath,
+        content: pdfBase64,
+        name: filename,
       },
     ],
-  });
+  };
 
-  console.log("Email sent to", to, "| messageId:", info.messageId);
+  const response = await axios.post(
+    "https://api.brevo.com/v3/smtp/email",
+    payload,
+    {
+      headers: {
+        "api-key": process.env.BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  console.log("Email sent to", to, "| messageId:", response.data.messageId);
   cleanupPDF(pdfPath);
 };
 
