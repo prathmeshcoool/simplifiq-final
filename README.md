@@ -2,121 +2,149 @@
 
 An AI-powered lead enrichment and audit automation platform.
 
-The system automates the complete workflow from lead submission to AI-generated business audit report delivery.
+The system automates the complete workflow from lead submission to AI-generated business audit report delivery — scraping the company website, generating a structured AI audit, creating a PDF report, emailing it to the lead, and logging the result to Google Sheets.
+
+**Live demo:** [simplifiq-final.vercel.app](https://simplifiq-final.vercel.app)
 
 ---
 
-# Features
+## Features
 
-- Lead capture form using React + Tailwind CSS
-- Automated backend workflow using Express.js
-- Company website scraping and enrichment
-- AI-powered business analysis using Groq LLM
-- Structured audit generation with JSON validation
-- Dynamic PDF report generation using Puppeteer
-- Automated email delivery with PDF attachment
-- Google Sheets lead logging
-- Error handling and fallback responses
+- Lead capture form — React + Tailwind CSS
+- Input validation with specific error messages (email format, URL format, field lengths)
+- Rate limiting — 10 requests per 15 minutes per IP
+- Company website scraping with Cheerio (8s timeout, User-Agent header)
+- AI-powered business audit via Groq LLM (structured JSON output with shape validation)
+- Dynamic PDF report generation with Puppeteer
+- Automated email delivery with PDF attachment via Nodemailer
+- Google Sheets lead logging via Google Sheets API
+- PDF cleanup after email delivery (no disk accumulation)
 - Modular service-based backend architecture
-- Responsive modern UI
+- Environment-based configuration (no hardcoded secrets)
+- Jest + Supertest test suite (16 tests across 4 files)
 
 ---
 
-# Tech Stack
+## Tech Stack
 
-## Frontend
-- React
-- Vite
-- Tailwind CSS
-- Axios
+**Frontend:** React, Vite, Tailwind CSS, Axios
 
-## Backend
-- Node.js
-- Express.js
-- Puppeteer
-- Nodemailer
-- Cheerio
-- Groq API
-- Google Sheets API
+**Backend:** Node.js, Express.js, Puppeteer, Nodemailer, Cheerio, Groq API, Google Sheets API
+
+**Testing:** Jest, Supertest
+
+**Deployment:** Vercel (frontend), Render (backend)
 
 ---
 
-# System Workflow
+## System Workflow
 
-1. User submits lead form
-2. Backend validates incoming lead data
-3. Website content is scraped and enriched
-4. AI generates structured business audit
-5. HTML report template is generated
-6. PDF report is created using Puppeteer
-7. Email with PDF attachment is automatically sent
-8. Lead activity is logged into Google Sheets
+```
+Lead form submission
+       ↓
+Input validation (email, URL, length checks)
+       ↓
+Website scraping (Cheerio + axios)
+       ↓
+AI audit generation (Groq LLM → structured JSON)
+       ↓
+HTML report templating
+       ↓
+PDF generation (Puppeteer)
+       ↓
+Email delivery with PDF attachment (Nodemailer)
+       ↓
+PDF cleanup from disk
+       ↓
+Lead logged to Google Sheets
+```
 
 ---
 
-# Project Structure
+## Project Structure
 
-```bash
+```
 client/
+  src/
+    App.jsx          # Main React component
 server/
   services/
+    aiService.js     # Groq LLM integration + JSON validation
+    scrapeService.js # Website scraping with Cheerio
+    pdfService.js    # PDF generation with Puppeteer
+    emailService.js  # Email delivery with Nodemailer
+    sheetsService.js # Google Sheets logging
   templates/
-  generated-reports/
+    reportTemplate.js  # HTML report template
+  __tests__/
+    aiService.test.js       # 5 unit tests
+    scrapeService.test.js   # 4 unit tests
+    pdfService.test.js      # 4 unit tests
+    validation.test.js      # 5 integration tests (supertest)
+  App.js     # Express app (routes, validation, rate limiting)
+  index.js   # Server entry point
 screenshots/
 README.md
-reflection.txt
+RUN_LOCALLY.md
 ```
 
 ---
 
-# Setup Instructions
+## Getting Started
 
-## 1. Clone Repository
+See [RUN_LOCALLY.md](./RUN_LOCALLY.md) for full local setup instructions.
 
 ```bash
-git clone https://github.com/prathmeshcool/simplifiq-ai-lead-system
+git clone https://github.com/prathmeshcoool/simplifiq-final
 ```
 
----
-
-## 2. Frontend Setup
+### Quick start
 
 ```bash
-cd client
-npm install
-npm run dev
-```
-
----
-
-## 3. Backend Setup
-
-```bash
+# Server
 cd server
+cp .env.example .env   # fill in your keys
 npm install
-npm run dev
+npm run dev            # runs on port 5000
+
+# Client (new terminal)
+cd client
+cp .env.example .env
+npm install
+npm run dev            # opens at localhost:5173
+
+# Tests
+cd server
+npm test               # 16 tests, no API keys needed
 ```
 
 ---
 
-# Environment Variables
+## Environment Variables
 
-Create `.env` inside `/server`
+Create `.env` inside `/server`:
 
-```env
-GROQ_API_KEY=your_key
+```
+GROQ_API_KEY=your_groq_api_key
+EMAIL_USER=your_gmail_address
+EMAIL_PASS=your_gmail_app_password
+GOOGLE_SHEET_ID=your_google_sheet_id
+PORT=5000
+```
 
-EMAIL_USER=your_email
-EMAIL_PASS=your_app_password
+Place `google-credentials.json` (Google service account key) inside `/server`.
 
-GOOGLE_SHEET_ID=your_sheet_id
+Create `.env` inside `/client`:
+
+```
+VITE_API_URL=http://localhost:5000
 ```
 
 ---
 
-# API Endpoint
+## API Endpoint
 
-## POST `/api/lead`
+### POST `/api/lead`
 
 Request body:
 
@@ -129,90 +157,97 @@ Request body:
 }
 ```
 
----
+Validation rules:
+- All fields required
+- `email` must be a valid email format
+- `website` must be a valid URL (e.g. `https://...`)
+- `name` and `company` must be at least 2 characters
 
-# Engineering Decisions
+Success response:
 
-## Structured AI Output
-The AI model is forced to return structured JSON to ensure predictable frontend rendering and reduce parsing issues.
-
-## Error Handling
-Fallback responses were added for:
-- invalid AI JSON
-- scraping failures
-- API failures
-- email issues
-
-## PDF Generation
-Puppeteer was used to generate professional reports with custom HTML templates.
-
-## Modular Architecture
-Services were separated into:
-- scraping
-- AI generation
-- PDF generation
-- email delivery
-- Google Sheets logging
-
-to improve maintainability and scalability.
+```json
+{
+  "success": true,
+  "message": "Audit generated for Stripe",
+  "audit": {
+    "companySummary": "...",
+    "painPoints": ["..."],
+    "aiOpportunities": ["..."],
+    "recommendations": ["..."]
+  }
+}
+```
 
 ---
 
-# Challenges Faced
+## Running Tests
 
-- Handling malformed AI JSON responses
-- Managing async workflow between scraping, AI analysis, PDF generation, and email delivery
-- Improving PDF readability and styling
-- Configuring secure email authentication
-- Handling external API failures gracefully
+```bash
+cd server
+npm test
+```
+
+All tests are fully mocked — no API keys, no network, no browser, no email required.
 
 ---
 
-# Future Improvements
+## Engineering Decisions
 
-- Google Drive PDF archiving
+**Structured AI output** — The AI model is given a system-role prompt enforcing JSON-only output, with a regex fallback to extract JSON even if the model adds surrounding text, and shape validation to ensure all fields are the correct types before reaching the frontend.
+
+**Modular service architecture** — Each concern (scraping, AI, PDF, email, Sheets) is a separate service module, making each independently testable and swappable.
+
+**Environment-based Puppeteer** — On Render (production), `@sparticuz/chromium` + `puppeteer-core` is used (bundled Chromium, no download needed). Locally, regular `puppeteer` is used for a smooth dev experience.
+
+**PDF cleanup** — Generated PDFs are deleted from disk immediately after the email is sent, so files don't accumulate on the server.
+
+**Trust proxy** — `app.set("trust proxy", 1)` is set so `express-rate-limit` correctly identifies clients by IP behind Render's reverse proxy.
+
+---
+
+## Challenges Faced
+
+- Handling malformed AI JSON responses — solved with system-role enforcement, regex extraction, and shape validation
+- Puppeteer on Render's free tier — solved by switching to `@sparticuz/chromium` which bundles its own Chromium binary
+- Rate limiter `X-Forwarded-For` error on Render — solved by setting `trust proxy`
+- Managing async workflow across 5 external services with proper error propagation
+- Google credentials on cloud deployment — solved by reading from `GOOGLE_CREDENTIALS_JSON` env var instead of a file
+
+---
+
+## Future Improvements
+
+- Database integration for lead history and audit storage
 - Authentication system
-- Database integration
-- CRM integrations
+- Lead history dashboard
+- Google Drive PDF archiving
+- CRM integrations (HubSpot, Salesforce)
+- AI lead scoring and prioritization
 - Multi-page PDF reports
-- AI scoring and lead prioritization
-- Cloud deployment and monitoring
 
 ---
 
-# Screenshots
+## Screenshots
 
-## Lead Form
-![Lead Form](./screenshots/form.png)
+### Lead Form
+![Lead Form](screenshots/form.png)
 
-## Generated Audit Overview
+### Generated Audit
+![Audit Top](screenshots/audit-top.png)
+![Audit Bottom](screenshots/audit-bottom.png)
 
-### Audit Top
-![Audit Overview](./screenshots/audit-top.png)
-<br>
-<br>
-<br>
+### PDF Report
+![PDF Top](screenshots/pdf-top.png)
+![PDF Bottom](screenshots/pdf-bottom.png)
 
-### Audit Bottom
-<img src="./screenshots/audit-bottom.png" alt="Audit Details" style="margin-left: 25px;">
+### Email Delivery
+![Email](screenshots/email.png)
 
-
-<br>
-<br>
-<br>
-
-## PDF Report Overview
-![PDF Report Overview](./screenshots/pdf-top.png)
-![PDF Report Details](./screenshots/pdf-bottom.png)
-
-## Email Delivery
-![Email Delivery](./screenshots/email.png)
-
-## Google Sheets Logging
-![Google Sheets](./screenshots/sheets.png)
+### Google Sheets Logging
+![Sheets](screenshots/sheets.png)
 
 ---
 
-# Author
+## Author
 
 Prathmesh Naiknaware
